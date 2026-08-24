@@ -1,5 +1,5 @@
 // server/api/posts/index.get.ts
-import { getDb } from '../../utils/db'
+import { getDb } from '../utils/db'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
     let where = ''
     const params: any[] = []
 
+    // 处理 status 参数
     if (status !== 'all') {
       where = 'WHERE status = ?'
       params.push(status)

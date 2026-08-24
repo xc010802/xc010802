@@ -59,44 +59,56 @@ export async function getDb() {
     console.log('✅ 数据库初始化完成')
   }
   
+  // 返回兼容的 API
   return {
-    prepare: (sql: string) => ({
-      run: (...params: any[]) => {
-        db.run(sql, params)
-        // 获取 last_insert_rowid
-        const result = db.exec('SELECT last_insert_rowid() as id')
-        const lastInsertRowid = result[0]?.values[0]?.[0] || 0
-        return { changes: db.getRowsModified(), lastInsertRowid }
-      },
-      get: (...params: any[]) => {
-        const stmt = db.prepare(sql)
-        stmt.bind(params)
-        if (stmt.step()) {
-          const cols = stmt.getColumnNames()
-          const vals = stmt.get()
-          const row: any = {}
-          cols.forEach((c: string, i: number) => row[c] = vals[i])
+    prepare: (sql: string) => {
+      const stmt = db.prepare(sql)
+      return {
+        run: (...params: any[]) => {
+          stmt.bind(params)
+          stmt.step()
+          const changes = db.getRowsModified()
+          // 获取最后插入的 ID
+          let lastInsertRowid = 0
+          try {
+            const result = db.exec('SELECT last_insert_rowid() as id')
+            if (result && result[0] && result[0].values && result[0].values[0]) {
+              lastInsertRowid = result[0].values[0][0] || 0
+            }
+          } catch (e) {
+            // 忽略
+          }
           stmt.free()
-          return row
+          return { changes, lastInsertRowid }
+        },
+        get: (...params: any[]) => {
+          stmt.bind(params)
+          if (stmt.step()) {
+            const cols = stmt.getColumnNames()
+            const vals = stmt.get()
+            const row: any = {}
+            cols.forEach((c: string, i: number) => row[c] = vals[i])
+            stmt.free()
+            return row
+          }
+          stmt.free()
+          return undefined
+        },
+        all: (...params: any[]) => {
+          const results: any[] = []
+          stmt.bind(params)
+          while (stmt.step()) {
+            const cols = stmt.getColumnNames()
+            const vals = stmt.get()
+            const row: any = {}
+            cols.forEach((c: string, i: number) => row[c] = vals[i])
+            results.push(row)
+          }
+          stmt.free()
+          return results
         }
-        stmt.free()
-        return undefined
-      },
-      all: (...params: any[]) => {
-        const results: any[] = []
-        const stmt = db.prepare(sql)
-        stmt.bind(params)
-        while (stmt.step()) {
-          const cols = stmt.getColumnNames()
-          const vals = stmt.get()
-          const row: any = {}
-          cols.forEach((c: string, i: number) => row[c] = vals[i])
-          results.push(row)
-        }
-        stmt.free()
-        return results
-      },
-    }),
+      }
+    },
     exec: (sql: string) => {
       db.run(sql)
     }

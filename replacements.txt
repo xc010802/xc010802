@@ -1,0 +1,12 @@
+# replacements.txt for git-filter-repo --replace-text
+# 格式：<原文>==><替换为的文本>
+# 请在运行前确认并把要清理的敏感字符串添加到这里（每行一条）。
+
+# SMTP 明文（示例：你之前在代码中包含的授权码）
+srbwdynloubnefce==>[REDACTED_SMTP_PASS]
+
+# 发件人邮箱（如果也想替换）
+1872120188@qq.com==>[REDACTED_EMAIL]
+
+# 如果你在代码中留有 JWT_SECRET 的默认值，也可以替换
+your-super-secret-key-change-in-production==>[REDACTED_JWT_SECRET]

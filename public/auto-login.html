@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Auto Login</title>
+</head>
+<body>
+  <div style="font-family: sans-serif; padding: 2rem;">
+    <h2>Auto Login</h2>
+    <p id="msg">正在尝试登录并跳转...</p>
+  </div>
+
+  <script>
+    function fromBase64(str) {
+      try {
+        return decodeURIComponent(escape(window.atob(str)));
+      } catch (e) {
+        try { return window.atob(str); } catch { return null }
+      }
+    }
+
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    const userB64 = params.get('user');
+
+    if (!token) {
+      document.getElementById('msg').textContent = '缺少 token，请在开发环境通过后端获取并附加 token 参数。';
+    } else {
+      try {
+        localStorage.setItem('token', token);
+        if (userB64) {
+          const userJson = fromBase64(userB64);
+          if (userJson) localStorage.setItem('user', userJson);
+        }
+        document.getElementById('msg').textContent = '已写入 localStorage，3 秒后跳转到首页...';
+        setTimeout(() => { location.href = '/'; }, 3000);
+      } catch (e) {
+        document.getElementById('msg').textContent = '写入 localStorage 失败：' + e.message;
+      }
+    }
+  </script>
+</body>
+</html>

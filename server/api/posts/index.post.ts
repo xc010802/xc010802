@@ -1,32 +1,35 @@
+// server/api/posts/index.post.ts
 import { getDb } from '../../utils/db'
 import { requireAuth } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = requireAuth(event)
-  const body = await readBody(event)
-  const { title, content, description, cover, tags, status } = body
-
-  if (!title) {
-    return { success: false, message: '标题不能为空' }
-  }
-
-  const db = getDb()
-  
-  // 生成 slug
-  const slug = body.slug || title.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36)
-
-  const postStatus = status || 'draft'
-  const publishedAt = postStatus === 'published' ? new Date().toISOString() : null
-  const now = new Date().toISOString()
-
   try {
+    // ✅ 添加 await
+    const user = await requireAuth(event)
+    const body = await readBody(event)
+    const { title, content, description, cover, tags, status } = body
+
+    if (!title) {
+      return { success: false, message: '标题不能为空' }
+    }
+
+    // ✅ 添加 await
+    const db = await getDb()
+    
+    // 生成 slug
+    const slug = body.slug || title.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36)
+
+    const postStatus = status || 'draft'
+    const publishedAt = postStatus === 'published' ? new Date().toISOString() : null
+    const now = new Date().toISOString()
+
     // 插入文章
     const stmt = db.prepare(`
       INSERT INTO posts (title, slug, content, description, cover, tags, status, author_id, published_at, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     
-    stmt.run(
+    const result = stmt.run(
       title, 
       slug, 
       content || '', 
@@ -40,15 +43,9 @@ export default defineEventHandler(async (event) => {
       now
     )
 
-    // 使用 slug 查询刚创建的文章
-    let post = null
-    try {
-      post = db.prepare('SELECT * FROM posts WHERE slug = ?').get(slug)
-    } catch (_) {
-      // 忽略查询错误
-    }
+    // 查询刚创建的文章
+    const post = db.prepare('SELECT * FROM posts WHERE slug = ?').get(slug)
 
-    // 如果查询成功，返回数据
     if (post) {
       return { 
         success: true, 
@@ -63,6 +60,7 @@ export default defineEventHandler(async (event) => {
     return { 
       success: true, 
       data: { 
+        id: result.lastInsertRowid,
         title, 
         slug, 
         content: content || '', 
@@ -78,6 +76,7 @@ export default defineEventHandler(async (event) => {
     }
 
   } catch (error: any) {
+    console.error('❌ 创建文章错误:', error)
     return { 
       success: false, 
       message: error.message || '服务器错误' 
