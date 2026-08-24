@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "ainative-openai": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "ainative-openai"
+      ],
+      "env": {
+        "AINATIVE_API_KEY": "tmp_6JNzigFPBgyyJW6j7WFQwY1wih9H0qklMP4YCPEPtZQ",
+        "AINATIVE_PROJECT_ID": "271b1bd6-7155-4003-824e-be0bb1f8b399"
+      }
+    }
+  }
+}
