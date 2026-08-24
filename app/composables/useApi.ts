@@ -1,21 +1,22 @@
-// composables/useApi.ts
+﻿// composables/useApi.ts
 export const useApi = () => {
   const getToken = () => {
     if (import.meta.client) {
-      return localStorage.getItem('blog_token') || ''
+      // 使用与前端其他位置一致的 key
+      return localStorage.getItem('token') || ''
     }
     return ''
   }
 
   const setToken = (token: string) => {
     if (import.meta.client) {
-      localStorage.setItem('blog_token', token)
+      localStorage.setItem('token', token)
     }
   }
 
   const clearToken = () => {
     if (import.meta.client) {
-      localStorage.removeItem('blog_token')
+      localStorage.removeItem('token')
     }
   }
 
@@ -62,9 +63,11 @@ export const useApi = () => {
     const formData = new FormData()
     formData.append('file', file)
 
+    const headers = token ? { Authorization: `Bearer ${token}` } : {}
+
     const res = await $fetch<{ success: boolean; data?: any; message?: string }>(url, {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers,
       body: formData,
     })
 
